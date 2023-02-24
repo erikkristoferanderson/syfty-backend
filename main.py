@@ -1,30 +1,21 @@
+from prefect import flow, task
+
 import praw
 import time
 from datetime import datetime, timezone
 import psycopg2
 import smtplib
 import ssl
-import db_creds
-import email_creds
+from env import db_creds
+from env import email_creds
 
 SEARCH_WAIT_TIME = 60 * 1000 + 5
 
 
+@flow(name="Main Syfty Flow")
 def main():
     # Connect to the database
-    print('opening database connection')
-    conn = psycopg2.connect(host=db_creds.db_endpoint, user=db_creds.db_username,
-                            password=db_creds.db_password, database=db_creds.db_database,
-                            port=db_creds.db_port)
-    sql = ("SELECT s.subreddit, s.search_term, u.email FROM syfty_search as s "
-           " join auth_user as u on s.owner_id = u.id "
-           " where u.is_active")
-    # sql = "SELECT * FROM information_schema.columns where table_name='auth_user';"
-    # sql = "SELECT * FROM information_schema.tables;"
-    # Open a cursor to execute SQL statements
-    cur = conn.cursor()
-    cur.execute(sql)
-    results = cur.fetchall()
+    results = read_from_db()
     # print(results)
     for result in results:
         print('result', result)
@@ -39,14 +30,31 @@ def main():
         for submission in submissions:
             print(submission.title)
             send_email(submission, subreddit_name, search_phrase, user_email)
-            break
+
+
+@task
+def read_from_db():
+    print('opening database connection')
+    conn = psycopg2.connect(host=db_creds.db_endpoint, user=db_creds.db_username,
+                            password=db_creds.db_password, database=db_creds.db_database,
+                            port=db_creds.db_port)
+    sql = ("SELECT s.subreddit, s.search_term, u.email FROM syfty_search as s "
+           " join auth_user as u on s.owner_id = u.id "
+           " where u.is_active")
+    # sql = "SELECT * FROM information_schema.columns where table_name='auth_user';"
+    # sql = "SELECT * FROM information_schema.tables;"
+    # Open a cursor to execute SQL statements
+    cur = conn.cursor()
+    cur.execute(sql)
+    results = cur.fetchall()
     # Close the cursor and connection
     cur.close()
     conn.close()
     print('connection closed')
-    # time.sleep(SEARCH_WAIT_TIME)
+    return results
 
 
+@task
 def get_posts(subreddit_name: str, search_phrase: str):
     reddit = praw.Reddit("bot")
     subreddit = reddit.subreddit(subreddit_name)
@@ -59,6 +67,7 @@ def get_posts(subreddit_name: str, search_phrase: str):
     return submissions
 
 
+@task
 def send_email(submission, subreddit_name, search_phrase, user_email):
     port = 587  # For TLS
     smtp_server = "smtp.zeptomail.com"
