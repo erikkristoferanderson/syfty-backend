@@ -9,27 +9,28 @@ import ssl
 from env import db_creds
 from env import email_creds
 
-SEARCH_WAIT_TIME = 60 * 1000 + 5
+SEARCH_WAIT_TIME = 60 * 10 + 5
 
 
-@flow(name="Main Syfty Flow")
+@flow(name="Main Syfty Flow", log_prints=True)
 def main():
     # Connect to the database
     results = read_from_db()
     # print(results)
     for result in results:
-        print('result', result)
-        subreddit_name = result[0]
-        print('subreddit_name', subreddit_name)
-        search_phrase = result[1]
-        print('search_phrase', search_phrase)
-        user_email = result[2]
-        print('user_email', user_email)
-        submissions = get_posts(subreddit_name, search_phrase)
-        print(submissions)
-        for submission in submissions:
-            print(submission.title)
-            send_email(submission, subreddit_name, search_phrase, user_email)
+        try:
+            subreddit_name = result[0]
+            search_phrase = result[1]
+            user_email = result[2]
+            submissions = get_posts(subreddit_name, search_phrase)
+            for submission in submissions:
+                try:
+                    send_email(submission, subreddit_name,
+                               search_phrase, user_email)
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
 
 
 @task
@@ -76,9 +77,11 @@ def send_email(submission, subreddit_name, search_phrase, user_email):
     receiver_email = user_email
     login_name = email_creds.EMAIL_HOST_USER
     password = email_creds.EMAIL_HOST_PASSWORD
-    message = (f"Subject: New post on r/{subreddit_name} about {search_phrase}\n\n" + f"Reddit Post Title: {submission.title}\n" +
+    cleaned_title = ''.join(
+        [i if ord(i) < 128 else '??' for i in submission.title])
+    message = (f"Subject: New post on r/{subreddit_name} about {search_phrase}\n\n" + f"Reddit Post Title: {cleaned_title}\n" +
                f"Reddit Post URL: {submission.url}\n" + f"\nThis message is sent from Python.")
-    print(message)
+    # print(message)
     context = ssl.create_default_context()
     with smtplib.SMTP(smtp_server, port) as server:
         server.ehlo()  # Can be omitted
