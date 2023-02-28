@@ -73,7 +73,7 @@ def send_email(submission, subreddit_name, search_phrase, user_email):
     port = 587  # For TLS
     smtp_server = "smtp.zeptomail.com"
 
-    sender_email = "hello@syfty.net"
+    sender_email = 'Hello from Syfty <hello@syfty.net>'
     receiver_email = user_email
     login_name = email_creds.EMAIL_HOST_USER
     password = email_creds.EMAIL_HOST_PASSWORD
