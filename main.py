@@ -16,7 +16,8 @@ SEARCH_WAIT_TIME = 60 * 10 + 5
 def main():
     # Connect to the database
     results = read_from_db()
-    # print(results)
+    print('results', results)
+
     for result in results:
         try:
             subreddit_name = result[0]
@@ -39,12 +40,10 @@ def read_from_db():
     conn = psycopg2.connect(host=db_creds.db_endpoint, user=db_creds.db_username,
                             password=db_creds.db_password, database=db_creds.db_database,
                             port=db_creds.db_port)
-    sql = ("SELECT s.subreddit, s.search_term, u.email FROM syfty_syft as s "
-           " join auth_user as u on s.owner_id = u.id "
-           " where u.is_active")
-    # sql = "SELECT * FROM information_schema.columns where table_name='auth_user';"
-    # sql = "SELECT * FROM information_schema.tables;"
-    # Open a cursor to execute SQL statements
+    sql = ("SELECT s.subreddit, s.search_term, u.email FROM syfts_syft as s "
+           " join accounts_customuser as u on s.owner_id = u.id "
+           " where u.is_active=True")
+
     cur = conn.cursor()
     cur.execute(sql)
     results = cur.fetchall()
