@@ -9,6 +9,8 @@ import ssl
 from env import db_creds
 from env import email_creds
 
+import time
+
 SEARCH_WAIT_TIME = 60 * 10 + 5
 
 
@@ -16,7 +18,7 @@ SEARCH_WAIT_TIME = 60 * 10 + 5
 def main():
     # Connect to the database
     results = read_from_db()
-    print('results', results)
+    print('len(results)', len(results))
 
     for result in results:
         try:
@@ -24,6 +26,7 @@ def main():
             search_phrase = result[1]
             user_email = result[2]
             submissions = get_posts(subreddit_name, search_phrase)
+            # print(submissions)
             for submission in submissions:
                 try:
                     send_email(submission, subreddit_name,
@@ -54,16 +57,27 @@ def read_from_db():
     return results
 
 
-@task
+@task(log_prints=True)
 def get_posts(subreddit_name: str, search_phrase: str):
     reddit = praw.Reddit("bot")
     subreddit = reddit.subreddit(subreddit_name)
     submissions = []
     for submission in subreddit.new(limit=30):
-        now = datetime.now(timezone.utc)
-        now_epoch = time.mktime(now.timetuple())
+        # print('submission', submission)
+        now_epoch = time.time()
+        # print('now_epoch', now_epoch)
+        # print('submission.created_utc', submission.created_utc)
+        # print('search_phrase.lower()', search_phrase.lower())
+        # print('submission.title.lower()', submission.title.lower())
         if search_phrase.lower() in submission.title.lower() and int(now_epoch - submission.created_utc) < SEARCH_WAIT_TIME:
             submissions.append(submission)
+            # print('yes')
+        else:
+            pass
+            # print('search_phrase.lower() in submission.title.lower()',
+            #       search_phrase.lower() in submission.title.lower())
+            # print('int(now_epoch - submission.created_utc) < SEARCH_WAIT_TIME',
+            #       int(now_epoch - submission.created_utc) < SEARCH_WAIT_TIME)
     return submissions
 
 
