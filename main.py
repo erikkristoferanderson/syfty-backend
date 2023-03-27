@@ -4,12 +4,11 @@ import os
 
 import praw
 import time
-from datetime import datetime, timezone
+
 import psycopg2
 import smtplib
 import ssl
-from env import db_creds
-from env import email_creds
+
 
 from dotenv import load_dotenv
 
