@@ -1,5 +1,7 @@
 from prefect import flow, task
 
+import os
+
 import praw
 import time
 from datetime import datetime, timezone
@@ -9,7 +11,11 @@ import ssl
 from env import db_creds
 from env import email_creds
 
+from dotenv import load_dotenv
+
 import time
+
+load_dotenv()
 
 SEARCH_WAIT_TIME = 60 * 10 + 5
 
@@ -40,9 +46,10 @@ def main():
 @task
 def read_from_db():
     print('opening database connection')
-    conn = psycopg2.connect(host=db_creds.db_endpoint, user=db_creds.db_username,
-                            password=db_creds.db_password, database=db_creds.db_database,
-                            port=db_creds.db_port)
+    conn = psycopg2.connect(host=os.getenv('DB_ENDPOINT'), user=os.getenv('DB_USERNAME'),
+                            password=os.getenv('DB_PASSWORD'), database=os.getenv('DB_DATABASE'),
+                            port=int(os.getenv('DB_PORT')))
+
     sql = ("SELECT s.subreddit, s.search_term, u.email FROM syfts_syft as s "
            " join accounts_customuser as u on s.owner_id = u.id "
            " where u.is_active=True")
@@ -88,8 +95,8 @@ def send_email(submission, subreddit_name, search_phrase, user_email):
 
     sender_email = 'Hello from Syfty <hello@syfty.net>'
     receiver_email = user_email
-    login_name = email_creds.EMAIL_HOST_USER
-    password = email_creds.EMAIL_HOST_PASSWORD
+    login_name = os.getenv('EMAIL_HOST_USER')
+    password = os.getenv('EMAIL_HOST_PASSWORD')
     cleaned_title = ''.join(
         [i if ord(i) < 128 else '??' for i in submission.title])
     message = (f"Subject: New post on r/{subreddit_name} about {search_phrase}\n\n" + f"Reddit Post Title: {cleaned_title}\n" +

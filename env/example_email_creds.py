@@ -1,2 +1,0 @@
-EMAIL_HOST_PASSWORD = 'foo'
-EMAIL_HOST_USER = 'bar'

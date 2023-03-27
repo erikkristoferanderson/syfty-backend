@@ -3,3 +3,4 @@ db_creds.py
 email_creds.py
 venv/
 __pycache__/
+.env
