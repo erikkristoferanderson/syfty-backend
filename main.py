@@ -8,11 +8,11 @@ import smtplib
 import ssl
 
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 import time
 
-load_dotenv()
+# load_dotenv()
 
 SEARCH_WAIT_TIME = 60 * 10 + 5
 
