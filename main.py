@@ -1,5 +1,3 @@
-from prefect import flow, task
-
 import os
 
 import praw
@@ -19,8 +17,8 @@ load_dotenv()
 SEARCH_WAIT_TIME = 60 * 10 + 5
 
 
-@flow(name="Main Syfty Flow", log_prints=True)
 def main():
+    print('in main...')
     # Connect to the database
     results = read_from_db()
     print('len(results)', len(results))
@@ -42,7 +40,6 @@ def main():
             print(e)
 
 
-@task
 def read_from_db():
     print('opening database connection')
     conn = psycopg2.connect(host=os.getenv('DB_ENDPOINT'), user=os.getenv('DB_USERNAME'),
@@ -63,9 +60,13 @@ def read_from_db():
     return results
 
 
-@task(log_prints=True)
 def get_posts(subreddit_name: str, search_phrase: str):
-    reddit = praw.Reddit("bot")
+    print('in get_posts...')
+    reddit = praw.Reddit(
+        client_id=os.getenv('PRAW_CLIENT_ID'),
+        client_secret=os.getenv('PRAW_CLIENT_SECRET'),
+        user_agent=os.getenv('PRAW_USER_AGENT'),
+    )
     subreddit = reddit.subreddit(subreddit_name)
     submissions = []
     for submission in subreddit.new(limit=30):
@@ -87,8 +88,8 @@ def get_posts(subreddit_name: str, search_phrase: str):
     return submissions
 
 
-@task
 def send_email(submission, subreddit_name, search_phrase, user_email):
+    print('in send_email...')
     port = 587  # For TLS
     smtp_server = "smtp.zeptomail.com"
 
