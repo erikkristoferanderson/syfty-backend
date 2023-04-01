@@ -1,0 +1,4 @@
+[bot]
+client_id="foo"
+client_secret="bar"
+user_agent="fake"
